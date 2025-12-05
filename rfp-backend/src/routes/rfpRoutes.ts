@@ -6,6 +6,7 @@ import { generateStructuredRfp } from "../ai/generateRfp";
 import { parseVendorProposal } from "../ai/parseProposal";
 import { compareProposalsWithAI } from "../ai/compareProposals";
 import { sendRfpEmail } from "../email/mailer";
+import {formatValue} from "../utils/helper";
 
 const router = Router();
 
@@ -281,19 +282,33 @@ router.post(
       const summaryLines: string[] = [];
 
       if (typeof structured === "object" && structured && "title" in structured) {
-        summaryLines.push(`Title: ${(structured as any).title}`);
+        summaryLines.push(`Title: ${formatValue((structured as any).title)}`);
       } else {
-        summaryLines.push(`Title: ${rfp.title}`);
+        summaryLines.push(`Title: ${formatValue(rfp.title)}`);
       }
 
       if (typeof structured === "object" && structured) {
         const s = structured as any;
-        if (s.budget) summaryLines.push(`Budget: ${s.budget}`);
-        if (s.delivery_within_days)
-          summaryLines.push(`Delivery within: ${s.delivery_within_days} days`);
-        if (s.payment_terms)
-          summaryLines.push(`Payment terms: ${s.payment_terms}`);
-        if (s.warranty) summaryLines.push(`Warranty: ${s.warranty}`);
+
+        if (s.budget !== undefined) {
+          summaryLines.push(`Budget: ${formatValue(s.budget)}`);
+        }
+
+        if (s.delivery_within_days !== undefined) {
+          summaryLines.push(
+            `Delivery within: ${formatValue(s.delivery_within_days)}`
+          );
+        }
+
+        if (s.payment_terms !== undefined) {
+          summaryLines.push(
+            `Payment terms: ${formatValue(s.payment_terms)}`
+          );
+        }
+
+        if (s.warranty !== undefined) {
+          summaryLines.push(`Warranty: ${formatValue(s.warranty)}`);
+        }
       }
 
       const subject = `RFP: ${rfp.title}`;
