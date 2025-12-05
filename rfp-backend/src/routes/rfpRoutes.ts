@@ -23,14 +23,29 @@ router.post("/", async (req: Request, res: Response): Promise<Response> => {
     const structuredJson: Prisma.InputJsonValue =
       structured as unknown as Prisma.InputJsonValue;
 
+    const safeBudget =
+      typeof (structured as any).budget === "number"
+        ? (structured as any).budget
+        : null;
+    
+    const safeDeliveryWithinDays =
+      typeof (structured as any).delivery_within_days === "number"
+        ? (structured as any).delivery_within_days
+        : null;
+
+    const safeWarranty =
+      typeof (structured as any).warranty === "string"
+        ? (structured as any).warranty
+        : null;
+  
     const created = await prisma.rfp.create({
       data: {
         title: structured.title || "Untitled RFP",
         rawInput: natural_text,
-        budget: structured.budget ?? null,
-        deliveryWithinDays: structured.delivery_within_days ?? null,
+        budget: safeBudget,
+        deliveryWithinDays: safeDeliveryWithinDays,
         paymentTerms: structured.payment_terms ?? null,
-        warranty: structured.warranty ?? null,
+        warranty: safeWarranty,
         structuredJson,
       },
     });

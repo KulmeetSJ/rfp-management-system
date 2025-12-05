@@ -150,7 +150,7 @@ ${JSON.stringify(
 `;
 
   const response = await ollama.chat({
-    model: "gpt-oss:120b",
+    model: "gpt-oss:20b",
     messages: [{ role: "user", content: prompt }],
     stream: false,
   });

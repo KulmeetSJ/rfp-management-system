@@ -17,6 +17,19 @@ export interface StructuredRfp {
   notes?: string | null;
 }
 
+function extractJson(text: string): any {
+  // 1. If it's wrapped in ```json ... ``` or ``` ... ```
+  
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenceMatch ? fenceMatch[1].trim() : text.trim();
+
+  // 2. If there's still extra commentary, try to grab the first {...} block
+  const braceMatch = candidate.match(/{[\s\S]*}/);
+  const jsonText = braceMatch ? braceMatch[0] : candidate;
+
+  return JSON.parse(jsonText);
+}
+
 export async function generateStructuredRfp(naturalText: string): Promise<StructuredRfp> {
   const prompt = `
 Convert the following procurement requirement text into a structured RFP JSON.
@@ -28,7 +41,12 @@ Requirements:
 - Extract payment terms
 - Extract warranty details
 - Extract list of items with (name, quantity, specs) whenever possible
+
+CRITICAL:
 - Return ONLY valid JSON.
+- Do NOT wrap the JSON in backticks.
+- Do NOT prefix with \`\`\`json or any code fences.
+- Do NOT add any explanation or text outside the JSON.
 
 User input:
 ${naturalText}
@@ -59,7 +77,7 @@ ${naturalText}
   // ----------------- We are using Ollama Model which is free of cost ---------------------- 
 
   const response = await ollama.chat({
-    model: "gpt-oss:120b",
+    model: "gpt-oss:20b",
     messages: [{ role: "user", content: prompt }],
     stream: false,
   });
@@ -67,7 +85,7 @@ ${naturalText}
   const text = response.message.content.trim();
 
   try {
-    const parsed = JSON.parse(text) as StructuredRfp;
+    const parsed = extractJson(text) as StructuredRfp;
     return parsed;
   } catch (err) {
     console.error("Failed to parse JSON from Ollama:", text, err);

@@ -10,7 +10,7 @@ This project was built as part of the **SDE Assignment – AI-Powered RFP Manage
 ### 1. AI-Based RFP Creation
 
 - Users enter requirements in natural language
-- The system uses LLM (Ollama Cloud: `gpt-oss:120b`) to convert text into structured JSON
+- The system uses LLM (Ollama Cloud: `gpt-oss:20b`) to convert text into structured JSON
 - Extracted fields include: budget, delivery timeline, payment terms, warranty, items list
 - RFP is saved in PostgreSQL via Prisma ORM
 
@@ -59,7 +59,7 @@ This project was built as part of the **SDE Assignment – AI-Powered RFP Manage
 - **Frontend:** Next.js, Tailwind CSS
 - **Backend:** Node.js, Express, TypeScript
 - **Database:** PostgreSQL + Prisma ORM
-- **AI Model:** Ollama Cloud (`gpt-oss:120b`)
+- **AI Model:** Ollama Cloud (`gpt-oss:20b`)
 - **Email:** Nodemailer + Gmail App Password
 
 ---
