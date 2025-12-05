@@ -32,6 +32,69 @@ interface CompareInput {
   }[];
 }
 
+
+// Simple heuristic fallback if AI call fails
+function heuristicCompare(input: CompareInput): ComparisonResult {
+  const scores: VendorScore[] = input.proposals.map((p) => {
+    const data = (p.extractedJson || {}) as any;
+
+    const totalPrice = typeof data.total_price === "number" ? data.total_price : null;
+    const deliveryDays =
+      typeof data.delivery_days === "number" ? data.delivery_days : null;
+
+    // Very naive scoring:
+    // - base 60
+    // - cheaper is better
+    // - faster delivery is better
+    let score = 60;
+
+    if (totalPrice !== null) {
+      // Just normalize roughly: lower price gets more points
+      const pricePenalty = Math.min(totalPrice / 1000, 30); // crude scaling
+      score += 30 - pricePenalty;
+    }
+
+    if (deliveryDays !== null) {
+      const deliveryBonus = Math.max(0, 20 - Math.min(deliveryDays, 20)); // 0–20 points
+      score += deliveryBonus / 2;
+    }
+
+    // Clamp to 0–100
+    score = Math.max(0, Math.min(100, score));
+
+    const summaryParts: string[] = [];
+    if (totalPrice !== null) summaryParts.push(`Total price: ${totalPrice}`);
+    if (deliveryDays !== null)
+      summaryParts.push(`Delivery in ~${deliveryDays} days`);
+    if (data.warranty) summaryParts.push(`Warranty: ${data.warranty}`);
+    if (data.payment_terms)
+      summaryParts.push(`Payment terms: ${data.payment_terms}`);
+
+    return {
+      vendorId: p.vendorId,
+      vendorName: p.vendorName,
+      score,
+      summary:
+        summaryParts.join("; ") || "Proposal parsed but limited data available.",
+    };
+  });
+
+  // Pick best score
+  const best = scores.reduce((prev, curr) =>
+    curr.score > prev.score ? curr : prev
+  );
+
+  return {
+    vendor_scores: scores,
+    recommendation: {
+      vendorId: best.vendorId,
+      vendorName: best.vendorName,
+      reason:
+        "Heuristic recommendation based on lower price and faster delivery (fallback because AI comparison failed).",
+    },
+  };
+}
+
 export async function compareProposalsWithAI(
   input: CompareInput
 ): Promise<ComparisonResult> {
@@ -96,8 +159,9 @@ ${JSON.stringify(
 
   try {
     return JSON.parse(text) as ComparisonResult;
-  } catch (error) {
-    console.error("Failed to parse comparison JSON from Ollama:", text, error);
-    throw new Error("Model did not return valid JSON for comparison");
+  } catch (err) {
+      console.error("Ollama comparison failed, falling back to heuristic:", err);
+    // Fallback: heuristic scoring so the app still works
+      return heuristicCompare(input);
   }
 }
