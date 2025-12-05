@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BACKEND_URL } from "@/lib/config";
 import type { CreateRfpResponse } from "@/lib/types";
 import { createRfp } from "@/lib/api";
-
 
 
 export default function RfpCreator() {

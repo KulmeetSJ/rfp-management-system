@@ -3,7 +3,7 @@ import { BACKEND_URL } from "./config";
 import type {
   RfpSummary,
   Vendor,
-  ProposalView,
+  ProposalView, VendorScore, Recommendation, Analysis,
   AnalysisResponse,
   CreateRfpResponse
 } from "./types";

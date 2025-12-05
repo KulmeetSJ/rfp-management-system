@@ -2,22 +2,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-
-type Vendor = {
-  id: number;
-  name: string;
-  email: string;
-  createdAt: string;
-};
-
-type RfpSummary = {
-  id: number;
-  title: string;
-  raw_input?: string;
-  created_at?: string;
-};
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+import { Vendor,RfpSummary } from "@/lib/types";
+import { createVendor, deleteVendor, listRfps, listVendors, sendRfpToVendors } from "@/lib/api";
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -39,12 +25,8 @@ export default function VendorsPage() {
     setLoadingVendors(true);
     setError(null);
     try {
-      const res = await fetch(`${BACKEND_URL}/vendors`);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch vendors (${res.status})`);
-      }
-      const data = (await res.json()) as Vendor[];
-      setVendors(data);
+      const vendorsData = await listVendors();
+      setVendors(vendorsData);
     } catch (error: unknown) {
       console.error(error);
       if (error instanceof Error) {
@@ -61,14 +43,10 @@ export default function VendorsPage() {
     setLoadingRfps(true);
     setError(null);
     try {
-      const res = await fetch(`${BACKEND_URL}/rfps`);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch RFPs (${res.status})`);
-      }
-      const data = (await res.json()) as RfpSummary[];
-      setRfps(data);
-      if (data.length > 0 && selectedRfpId === null) {
-        setSelectedRfpId(data[0].id);
+      const rfpsData = await listRfps();
+      setRfps(rfpsData);
+      if (rfpsData.length > 0 && selectedRfpId === null) {
+        setSelectedRfpId(rfpsData[0].id);
       }
     } catch (error: unknown) {
       console.error(error);
@@ -87,7 +65,7 @@ export default function VendorsPage() {
     void fetchRfps();
   }, []);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleCreateVendor = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
@@ -99,22 +77,7 @@ export default function VendorsPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/vendors`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email }),
-      });
-
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        throw new Error(body.error ?? `Failed to create vendor (${res.status})`);
-      }
-
-      const created = (await res.json()) as Vendor;
+      const created = await createVendor({name,email});
 
       setVendors((prev) => [created, ...prev]);
       setName("");
@@ -132,19 +95,11 @@ export default function VendorsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteVendor = async (id: number) => {
     setError(null);
     setInfo(null);
     try {
-      const res = await fetch(`${BACKEND_URL}/vendors/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok && res.status !== 204) {
-        const body = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        throw new Error(body.error ?? `Failed to delete vendor (${res.status})`);
-      }
+      await deleteVendor(id);
       setVendors((prev) => prev.filter((v) => v.id !== id));
       setSelectedVendorIds((prev) => prev.filter((vid) => vid !== id));
       setInfo("Vendor deleted.");
@@ -180,23 +135,7 @@ export default function VendorsPage() {
 
     setSending(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/rfps/${selectedRfpId}/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ vendorIds: selectedVendorIds }),
-      });
-
-      const body = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        sent?: number;
-        attempted?: number;
-      };
-
-      if (!res.ok) {
-        throw new Error(body.error ?? `Failed to send RFP (${res.status})`);
-      }
+      const body = await sendRfpToVendors(selectedRfpId,selectedVendorIds);
 
       setInfo(
         `RFP sent to ${body.sent ?? 0} out of ${body.attempted ?? 0} selected vendors.`
@@ -243,13 +182,13 @@ export default function VendorsPage() {
           Add a new vendor
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleCreateVendor} className="space-y-3">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 block text-slate-700">Name</span>
               <input
                 type="text"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 text-gray-500"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Acme Supplies Inc."
@@ -260,7 +199,7 @@ export default function VendorsPage() {
               <span className="mb-1 block text-slate-700">Email</span>
               <input
                 type="email"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 text-gray-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="sales@acme.com"
@@ -294,7 +233,7 @@ export default function VendorsPage() {
           </div>
           <div className="flex items-center gap-2">
             <select
-              className="w-64 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white cursor-pointer"
+              className="w-64 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white cursor-pointer text-gray-500"
               value={selectedRfpId ?? ""}
               onChange={(e) => {
                 const id = Number(e.target.value);
@@ -359,7 +298,7 @@ export default function VendorsPage() {
                 {vendors.map((vendor) => {
                   const selected = selectedVendorIds.includes(vendor.id);
                   return (
-                    <tr key={vendor.id} className="border-b border-slate-100">
+                    <tr key={vendor.id} className="border-b border-slate-100 text-gray-500">
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
@@ -377,7 +316,7 @@ export default function VendorsPage() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         <button
-                          onClick={() => void handleDelete(vendor.id)}
+                          onClick={() => void handleDeleteVendor(vendor.id)}
                           className="text-xs font-medium text-red-500 hover:text-red-600 cursor-pointer"
                         >
                           Delete

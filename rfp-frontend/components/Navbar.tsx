@@ -3,12 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const navItems = [
-  { label: "Create RFP", href: "/" },
-  { label: "Vendors", href: "/vendors" },
-  { label: "Comparison", href: "/comparison" },
-];
+import { navItems } from "@/lib/config";
 
 export default function Navbar() {
   const pathname = usePathname();

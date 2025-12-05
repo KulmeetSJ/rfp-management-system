@@ -45,15 +45,28 @@ router.delete(
   async (req: Request, res: Response): Promise<Response> => {
     try {
       const id = Number(req.params.id);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ error: "Invalid vendor id" });
+      console.log("DELETE /vendors/:id params:", req.params, "parsed id:", id);
+
+      if (!req.params.id || Number.isNaN(id)) {
+       return res.status(400).json({ error: "Invalid vendor id" });
       }
 
       await prisma.vendor.delete({ where: { id } });
       return res.status(204).send();
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: "Failed to delete vendor" });
+    } catch (error: any) {
+        console.error("Error deleting vendor:", error);
+
+        // Prisma FK error P2003 => vendor has proposals
+        if (
+          error.code === "P2003"
+        ) {
+          return res.status(400).json({
+            error:
+              "Cannot delete this vendor because there are proposals linked to it.",
+          });
+        }
+  
+        return res.status(500).json({ error: "Failed to delete vendor" });
     }
   }
 );

@@ -2,61 +2,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RfpSummary, AnalysisResponse, Vendor } from "@/lib/types";
+import { createProposal, getRfpAnalysis, listRfps, listVendors } from "@/lib/api";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
-type RfpSummary = {
-  id: number;
-  title: string;
-  raw_input?: string;
-  created_at?: string;
-};
-
-type ProposalView = {
-  id: number;
-  vendor: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  raw_email_text: string;
-  extracted_json: unknown;
-  created_at: string;
-};
-
-type VendorScore = {
-  vendorId: number;
-  vendorName: string;
-  score: number;
-  summary: string;
-};
-
-type Recommendation = {
-  vendorId: number;
-  vendorName: string;
-  reason: string;
-};
-
-type Analysis = {
-  vendor_scores: VendorScore[];
-  recommendation: Recommendation;
-};
-
-type AnalysisResponse = {
-  rfp: {
-    id: number;
-    title: string;
-  };
-  proposals: ProposalView[];
-  analysis: Analysis;
-};
-
-type Vendor = {
-  id: number;
-  name: string;
-  email: string;
-  createdAt: string;
-};
 
 export default function ComparisonPage() {
   const [rfps, setRfps] = useState<RfpSummary[]>([]);
@@ -80,14 +30,10 @@ export default function ComparisonPage() {
       setLoadingRfps(true);
       setError(null);
       try {
-        const res = await fetch(`${BACKEND_URL}/rfps`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch RFPs (${res.status})`);
-        }
-        const data = (await res.json()) as RfpSummary[];
-        setRfps(data);
-        if (data.length > 0 && selectedRfpId === null) {
-          setSelectedRfpId(data[0].id);
+        const rfpsData = await listRfps();
+        setRfps(rfpsData);
+        if (rfpsData.length > 0 && selectedRfpId === null) {
+          setSelectedRfpId(rfpsData[0].id);
         }
       } catch (err: unknown) {
         console.error(err);
@@ -106,14 +52,10 @@ export default function ComparisonPage() {
     const fetchVendors = async () => {
       setLoadingVendors(true);
       try {
-        const res = await fetch(`${BACKEND_URL}/vendors`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch vendors (${res.status})`);
-        }
-        const data = (await res.json()) as Vendor[];
-        setVendors(data);
-        if (data.length > 0 && selectedVendorId === null) {
-          setSelectedVendorId(data[0].id);
+        const vendorsData = await listVendors();
+        setVendors(vendorsData);
+        if (vendorsData.length > 0 && selectedVendorId === null) {
+          setSelectedVendorId(vendorsData[0].id);
         }
       } catch (err) {
         console.error(err);
@@ -134,19 +76,9 @@ export default function ComparisonPage() {
       setError(null);
       setAnalysis(null);
       try {
-        const res = await fetch(`${BACKEND_URL}/rfps/${selectedRfpId}/analysis`);
-        const body = (await res.json().catch(() => ({}))) as
-          | AnalysisResponse
-          | { error?: string };
+        const rfpAnalysisResponse = await getRfpAnalysis(selectedRfpId)
 
-        if (!res.ok) {
-          throw new Error(
-            (body as { error?: string }).error ??
-              `Failed to fetch analysis (${res.status})`
-          );
-        }
-
-        setAnalysis(body as AnalysisResponse);
+        setAnalysis(rfpAnalysisResponse);
       } catch (err: unknown) {
         console.error(err);
         if (err instanceof Error) setError(err.message);
@@ -185,43 +117,20 @@ export default function ComparisonPage() {
 
     setCreatingProposal(true);
     try {
-      const res = await fetch(
-        `${BACKEND_URL}/rfps/${selectedRfpId}/proposals`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            vendorId: selectedVendorId,
-            rawText: rawEmailText,
-          }),
-        }
-      );
-
-      const body = (await res.json().catch(() => ({}))) as {
-        error?: string;
-      };
-
-      if (!res.ok) {
-        throw new Error(body.error ?? `Failed to create proposal (${res.status})`);
-      }
+      await createProposal({
+        rfpId: selectedRfpId,
+        vendorId: selectedVendorId,
+        rawText: rawEmailText,
+      });
 
       setProposalInfo("Proposal created and parsed successfully.");
       setRawEmailText("");
 
       // Refresh analysis to include this new proposal
       if (selectedRfpId) {
-        const res2 = await fetch(
-          `${BACKEND_URL}/rfps/${selectedRfpId}/analysis`
-        );
-        const body2 = (await res2.json().catch(() => ({}))) as
-          | AnalysisResponse
-          | { error?: string };
+        const rfpAnalysisResponse2 = await getRfpAnalysis(selectedRfpId);
 
-        if (res2.ok) {
-          setAnalysis(body2 as AnalysisResponse);
-        }
+        setAnalysis(rfpAnalysisResponse2);
       }
     } catch (err: unknown) {
       console.error(err);
@@ -260,7 +169,7 @@ export default function ComparisonPage() {
           </div>
           <div>
             <select
-              className="w-full md:w-80 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white cursor-pointer"
+              className="w-full md:w-80 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white cursor-pointer text-gray-500"
               value={selectedRfpId ?? ""}
               onChange={(e) => handleSelectChange(e.target.value)}
               disabled={rfps.length === 0}
@@ -297,7 +206,7 @@ export default function ComparisonPage() {
               Vendor
             </label>
             <select
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white cursor-pointer"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white cursor-pointer text-gray-500"
               value={selectedVendorId ?? ""}
               onChange={(e) => {
                 const id = Number(e.target.value);
@@ -322,7 +231,7 @@ export default function ComparisonPage() {
             Vendor email text
           </label>
           <textarea
-            className="w-full min-h-[120px] border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white"
+            className="w-full min-h-[120px] border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 bg-white text-gray-500"
             placeholder="Paste the full email content from the vendor here..."
             value={rawEmailText}
             onChange={(e) => setRawEmailText(e.target.value)}
@@ -357,7 +266,7 @@ export default function ComparisonPage() {
             <h2 className="text-sm font-semibold text-slate-800">
               AI Recommendation
             </h2>
-            <p className="text-sm">
+            <p className="text-sm text-slate-700">
               Recommended vendor:{" "}
               <span className="font-semibold">
                 {analysis.analysis.recommendation.vendorName}
@@ -391,8 +300,8 @@ export default function ComparisonPage() {
                 <tbody>
                   {analysis.analysis.vendor_scores.map((vs) => (
                     <tr key={vs.vendorId} className="border-b border-slate-100">
-                      <td className="px-3 py-2">{vs.vendorName}</td>
-                      <td className="px-3 py-2 font-semibold">
+                      <td className="px-3 py-2 text-slate-700">{vs.vendorName}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-700">
                         {vs.score.toFixed(1)}
                       </td>
                       <td className="px-3 py-2 text-slate-700">
@@ -423,7 +332,7 @@ export default function ComparisonPage() {
                   >
                     <div className="flex justify-between items-center mb-2">
                       <div>
-                        <p className="text-sm font-semibold">
+                        <p className="text-sm font-semibold text-slate-600">
                           {p.vendor.name}
                         </p>
                         <p className="text-xs text-slate-500">
