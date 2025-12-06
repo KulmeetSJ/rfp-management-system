@@ -2,6 +2,7 @@
 
 A full-stack platform that automates the Request for Proposal (RFP) workflow using AI.  
 This project was built as part of the **SDE Assignment – AI-Powered RFP Management System**.
+It includes AI-based RFP generation, vendor management, proposal parsing, comparison, and automated recommendation.
 
 ---
 
@@ -75,83 +76,94 @@ root/
 
 ---
 
-# ⚙️ Backend Setup (rfp-backend)
+# 1. Project Setup
 
-### 1. Install dependencies
+## 1.a Prerequisites
 
+### **Backend**
+
+- Node.js ≥ 18
+- PostgreSQL
+- Ollama Cloud API Key
+  - Model used: **gpt-oss:20b**
+- SMTP credentials (Gmail or others)
+
+### **Frontend**
+
+- Node.js ≥ 18
+- Next.js 14+
+- TailwindCSS
+
+---
+
+## 1.b Installation Steps
+
+### Clone Repository
+
+```bash
+git clone <repo_url>
+cd rfp-management-system
 ```
+
+---
+
+## Backend Setup
+
+```bash
 cd rfp-backend
 npm install
 ```
 
----
-
-### 2. Create `.env`
+Create `.env`:
 
 ```
-DATABASE_URL="postgresql://postgres:password@localhost:5432/rfp_db?schema=public"
+PORT=4000
+DATABASE_URL=postgresql://user:password@localhost:5432/rfp_db
 
-# Ollama Cloud
-OLLAMA_API_KEY=your_ollama_api_key
-OLLAMA_HOST=https://ollama.com
+OLLAMA_API_KEY=your_api_key
 OLLAMA_MODEL=gpt-oss:20b
+OLLAMA_HOST=https://api.ollama.ai
 
-# Gmail SMTP (requires App Password)
 SMTP_HOST=smtp.gmail.com
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER=yourgmail@gmail.com
-SMTP_PASS=your_app_password
-SMTP_FROM="Procurement AI <yourgmail@gmail.com>"
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
 ```
 
----
+Initialize database:
 
-### 3. Prisma setup
-
-```
+```bash
 npx prisma migrate dev
-npx prisma generate
 ```
 
----
+Run backend:
 
-### 4. Run backend
-
-```
+```bash
 npm run dev
 ```
 
-Backend runs at:
-
-```
-http://localhost:4000
-```
-
 ---
 
-# 🎨 Frontend Setup (rfp-frontend)
+## Frontend Setup
 
-### 1. Install dependencies
-
-```
+```bash
 cd rfp-frontend
 npm install
 ```
 
-### 2. Create `.env.local`
+Create `.env.local`:
 
 ```
 NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 ```
 
-### 3. Run frontend
+Run frontend:
 
-```
+```bash
 npm run dev
 ```
 
-Frontend runs at:
+Browser:
 
 ```
 http://localhost:3000
@@ -159,58 +171,230 @@ http://localhost:3000
 
 ---
 
-# 🧪 End-to-End Workflow Testing
+## 1.c Email Sending Configuration
 
-## Step 1 — Create RFP
+The system uses Nodemailer.  
+For Gmail:
 
-- Go to `/`
-- Enter a natural language requirement
-- AI generates structured RFP → saved in DB
+1. Enable **2FA**
+2. Create an **App Password**
+3. Use it as `SMTP_PASS`
 
-## Step 2 — Add Vendors
-
-- Go to `/vendors`
-- Add one or more vendors
-
-## Step 3 — Send RFP
-
-- Select RFP + vendors
-- Click **Send RFP**
-- Email delivered via Gmail SMTP
-
-## Step 4 — Vendor Reply
-
-- Vendor replies to RFP email
-- Copy the email text
-
-## Step 5 — Add Proposal
-
-- Go to `/comparison`
-- Select vendor and paste email text
-- AI extracts structured proposal → saved in DB
-
-## Step 6 — Comparison
-
-- View AI-generated:
-  - Vendor scores
-  - Summaries
-  - Final recommendation
+RFP emails are sent from the **Vendors page**, where you select vendors and click _Send RFP_.
 
 ---
 
-# 📊 Database Schema (Prisma)
+## 1.d Running Everything Locally
 
-### Rfp
+Backend:
 
-- id, title, rawInput, structuredJson, budget, deliveryWithinDays, paymentTerms, warranty, createdAt
+```bash
+npm run dev
+```
 
-### Vendor
+Frontend:
 
-- id, name, email, createdAt
+```bash
+npm run dev
+```
 
-### Proposal
+---
 
-- id, rfpId, vendorId, rawEmailText, extractedJson, createdAt
+## 1.e Seed Data
+
+Vendors can be added directly from the UI — no seed script required.
+
+---
+
+# 2. Tech Stack
+
+## Frontend
+
+- Next.js 14
+- React
+- TailwindCSS
+
+## Backend
+
+- Node.js + Express
+- Prisma ORM
+- PostgreSQL
+- Nodemailer
+- Ollama Cloud API
+
+## AI
+
+- Ollama Cloud model: **gpt-oss:20b**
+
+## Key Libraries
+
+- express
+- prisma
+- nodemailer
+- dotenv
+
+---
+
+# 3. API Documentation
+
+## RFP Endpoints
+
+### **POST /rfps**
+
+Create AI-generated RFP from natural text.
+
+**Request**
+
+```json
+{ "natural_text": "I need 20 laptops..." }
+```
+
+**Response**
+
+```json
+{
+  "id": 1,
+  "title": "...",
+  "structured_json": { ... }
+}
+```
+
+---
+
+### **GET /rfps**
+
+List RFPs.
+
+---
+
+### **POST /rfps/:id/send**
+
+Send RFP invitation emails.
+
+**Request**
+
+```json
+{
+  "vendorIds": [1, 2]
+}
+```
+
+---
+
+### **POST /rfps/:id/proposals**
+
+Submit vendor reply text for automatic parsing.
+
+**Request**
+
+```json
+{
+  "vendor_id": 1,
+  "proposal_text": "We offer..."
+}
+```
+
+---
+
+### **GET /rfps/:id/analysis**
+
+AI proposal comparison + recommendation.
+
+**Response**
+
+```json
+{
+  "recommendation": "...",
+  "scores": [{ "vendor": "A", "score": 90 }]
+}
+```
+
+---
+
+# 4. Decisions & Assumptions
+
+## Design Decisions
+
+### AI-Based RFP Creation
+
+LLM extracts:
+
+- title
+- budget
+- delivery time
+- payment terms
+- warranty
+- item list
+
+### Vendor Responses
+
+Instead of building full IMAP ingestion, users **paste replies manually**, which fulfills assignment requirements while simplifying implementation.
+
+### Proposal Comparison
+
+AI generates:
+
+- scores
+- reasoning
+- final recommendation
+
+Allows flexible evaluation without fixed scoring rules.
+
+### Model Choice
+
+`gpt-oss:20b` used due to:
+
+- faster response time
+- lower cost
+- strong accuracy
+
+### Safety & Formatting
+
+A generic `formatValue()` ensures email fields never show `[object Object]`.
+
+---
+
+## Assumptions
+
+1. Vendor replies are pasted as raw free‑form text.
+2. Email ingestion is simulated (acceptable per assignment).
+3. AI output may vary → backend sanitizes JSON.
+4. Vendor deletion is blocked if proposals exist.
+5. Plain-text email templates for reliability.
+
+---
+
+# 5. AI Tools Usage
+
+## Tools Used
+
+- ChatGPT
+- GitHub Copilot
+- Ollama Cloud API
+
+## Contributions
+
+AI tools assisted with:
+
+- Designing Prisma schema
+- Writing Express routers
+- Parsing JSON from LLM
+- Debugging
+- React component scaffolding
+- Proposing comparison scoring logic
+
+## Example Prompts
+
+- “Convert natural procurement text into structured JSON.”
+- “Extract pricing and warranty from messy vendor email.”
+- “Compare these proposals and recommend a vendor.”
+
+## Learnings
+
+- LLMs extract business data from unstructured text reliably.
+- Smaller models (20b) perform better for fast iteration.
+- Must sanitize JSON before DB insertion.
+- Having centralized config improves maintainability.
 
 ---
 
@@ -227,29 +411,6 @@ http://localhost:3000
 | Recommendation               | ✔ Done                |
 | React + Node stack           | ✔ Done                |
 | Database persistence         | ✔ Done                |
-
----
-
-# 📄 .env.example
-
-## Backend
-
-```
-DATABASE_URL=
-OLLAMA_API_KEY=
-SMTP_HOST=
-SMTP_PORT=
-SMTP_SECURE=
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM=
-```
-
-## Frontend
-
-```
-NEXT_PUBLIC_BACKEND_URL=
-```
 
 ---
 
