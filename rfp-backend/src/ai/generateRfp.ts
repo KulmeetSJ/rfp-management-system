@@ -6,6 +6,7 @@
 // import { openRouter } from "./openRouter"
 
 import {ollama} from "./ollama"
+import { ENV } from "../utils/config";
 
 export interface StructuredRfp {
   title: string;
@@ -77,7 +78,7 @@ ${naturalText}
   // ----------------- We are using Ollama Model which is free of cost ---------------------- 
 
   const response = await ollama.chat({
-    model: "gpt-oss:20b",
+    model: ENV.OLLAMA_MODEL,
     messages: [{ role: "user", content: prompt }],
     stream: false,
   });

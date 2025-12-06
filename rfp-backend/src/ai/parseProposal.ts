@@ -1,5 +1,6 @@
 // src/ai/parseProposal.ts
 import { ollama } from "./ollama";
+import { ENV } from "../utils/config";
 
 export interface ParsedProposal {
   total_price?: number | null;
@@ -42,7 +43,7 @@ ${emailText}
 `;
 
   const response = await ollama.chat({
-    model: "gpt-oss:20b",
+    model: ENV.OLLAMA_MODEL,
     messages: [{ role: "user", content: prompt }],
     stream: false,
   });

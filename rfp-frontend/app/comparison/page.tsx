@@ -5,9 +5,6 @@ import { useEffect, useState } from "react";
 import { RfpSummary, AnalysisResponse, Vendor } from "@/lib/types";
 import { createProposal, getRfpAnalysis, listRfps, listVendors } from "@/lib/api";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-
-
 export default function ComparisonPage() {
   const [rfps, setRfps] = useState<RfpSummary[]>([]);
   const [selectedRfpId, setSelectedRfpId] = useState<number | null>(null);

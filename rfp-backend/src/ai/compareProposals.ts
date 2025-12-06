@@ -1,6 +1,7 @@
 // src/ai/compareProposals.ts
 import { ollama } from "./ollama";
 import type { Prisma } from "../generated/prisma/client";
+import { ENV } from "../utils/config";
 
 export interface VendorScore {
   vendorId: number;
@@ -150,7 +151,7 @@ ${JSON.stringify(
 `;
 
   const response = await ollama.chat({
-    model: "gpt-oss:20b",
+    model: ENV.OLLAMA_MODEL,
     messages: [{ role: "user", content: prompt }],
     stream: false,
   });

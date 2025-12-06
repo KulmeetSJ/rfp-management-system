@@ -1,8 +1,4 @@
 
-
-
-
-
 export function formatValue(value: any): string {
     if (value === null || value === undefined) return "Not specified";
   

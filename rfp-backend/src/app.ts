@@ -1,16 +1,12 @@
 // src/app.ts
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import vendorRoutes from "./routes/vendorRoutes";
 import rfpRoutes from "./routes/rfpRoutes";
-
-dotenv.config();
+import {ENV} from "./utils/config";
 
 const app = express();
-
-// Read port from env or default
-const PORT = process.env.PORT || 4000;
+const PORT = ENV.PORT;
 
 // Middleware
 app.use(cors());
