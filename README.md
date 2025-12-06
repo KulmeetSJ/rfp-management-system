@@ -414,6 +414,45 @@ AI tools assisted with:
 
 ---
 
+# 🧪 End-to-End Workflow Testing
+
+## Step 1 — Create RFP
+
+- Go to `/`
+- Enter a natural language requirement
+- AI generates structured RFP → saved in DB
+
+## Step 2 — Add Vendors
+
+- Go to `/vendors`
+- Add one or more vendors
+
+## Step 3 — Send RFP
+
+- Select RFP + vendors
+- Click **Send RFP**
+- Email delivered via Gmail SMTP
+
+## Step 4 — Vendor Reply
+
+- Vendor replies to RFP email
+- Copy the email text
+
+## Step 5 — Add Proposal
+
+- Go to `/comparison`
+- Select vendor and paste email text
+- AI extracts structured proposal → saved in DB
+
+## Step 6 — Comparison
+
+- View AI-generated:
+  - Vendor scores
+  - Summaries
+  - Final recommendation
+
+---
+
 # 🎉 Conclusion
 
 This system supports the entire RFP lifecycle:
