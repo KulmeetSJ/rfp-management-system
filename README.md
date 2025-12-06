@@ -93,7 +93,8 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/rfp_db?schema=public
 
 # Ollama Cloud
 OLLAMA_API_KEY=your_ollama_api_key
-OLLAMA_HOST=https://api.ollama.ai
+OLLAMA_HOST=https://ollama.com
+OLLAMA_MODEL=gpt-oss:20b
 
 # Gmail SMTP (requires App Password)
 SMTP_HOST=smtp.gmail.com

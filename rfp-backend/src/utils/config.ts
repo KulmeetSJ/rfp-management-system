@@ -16,6 +16,7 @@ export const ENV = {
   DATABASE_URL: requireEnv("DATABASE_URL"),
   OLLAMA_API_KEY: requireEnv("OLLAMA_API_KEY"),
   OLLAMA_MODEL: process.env.OLLAMA_MODEL ?? "gpt-oss:20b",
+  OLLAMA_HOST: process.env.OLLAMA_HOST ?? "https://ollama.com",
 
   SMTP_HOST: requireEnv("SMTP_HOST"),
   SMTP_PORT: requireEnv("SMTP_PORT"),
