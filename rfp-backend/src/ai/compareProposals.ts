@@ -2,6 +2,7 @@
 import { ollama } from "./ollama";
 import type { Prisma } from "../generated/prisma/client";
 import { ENV } from "../utils/config";
+import { extractJson } from "../utils/helper";
 
 export interface VendorScore {
   vendorId: number;
@@ -114,7 +115,7 @@ Your tasks:
    - payment terms
    - overall fit with the RFP
 2. Assign each vendor a score from 0 to 100 (higher is better).
-3. Write a short summary for each vendor (2–3 sentences).
+3. Write a short summary for each vendor (2-3 sentences).
 4. Choose the best vendor and explain why.
 
 Return ONLY valid JSON with this exact structure:
@@ -159,7 +160,8 @@ ${JSON.stringify(
   const text = response.message.content.trim();
 
   try {
-    return JSON.parse(text) as ComparisonResult;
+    const comparisonRes = extractJson(text) as ComparisonResult;
+    return comparisonRes;
   } catch (err) {
       console.error("Ollama comparison failed, falling back to heuristic:", err);
     // Fallback: heuristic scoring so the app still works

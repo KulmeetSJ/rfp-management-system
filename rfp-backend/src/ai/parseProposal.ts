@@ -1,6 +1,7 @@
 // src/ai/parseProposal.ts
 import { ollama } from "./ollama";
 import { ENV } from "../utils/config";
+import { extractJson } from "../utils/helper";
 
 export interface ParsedProposal {
   total_price?: number | null;
@@ -51,7 +52,8 @@ ${emailText}
   const text = response.message.content.trim();
 
   try {
-    return JSON.parse(text) as ParsedProposal;
+    const parsedProposal = extractJson(text) as ParsedProposal;
+    return parsedProposal;
   } catch (err) {
     console.error("Failed to parse proposal JSON from Ollama:", text, err);
     throw new Error("Model did not return valid JSON for proposal");

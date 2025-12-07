@@ -7,6 +7,7 @@
 
 import {ollama} from "./ollama"
 import { ENV } from "../utils/config";
+import { extractJson } from "../utils/helper";
 
 export interface StructuredRfp {
   title: string;
@@ -16,19 +17,6 @@ export interface StructuredRfp {
   warranty?: string | null;
   items?: { name: string; quantity: number; specs?: string | null }[];
   notes?: string | null;
-}
-
-function extractJson(text: string): any {
-  // 1. If it's wrapped in ```json ... ``` or ``` ... ```
-  
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fenceMatch ? fenceMatch[1].trim() : text.trim();
-
-  // 2. If there's still extra commentary, try to grab the first {...} block
-  const braceMatch = candidate.match(/{[\s\S]*}/);
-  const jsonText = braceMatch ? braceMatch[0] : candidate;
-
-  return JSON.parse(jsonText);
 }
 
 export async function generateStructuredRfp(naturalText: string): Promise<StructuredRfp> {
