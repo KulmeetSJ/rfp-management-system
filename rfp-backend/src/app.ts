@@ -1,5 +1,5 @@
 // src/app.ts
-import express from "express";
+import express, {Request, Response} from "express";
 import cors from "cors";
 import vendorRoutes from "./routes/vendorRoutes";
 import rfpRoutes from "./routes/rfpRoutes";
@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Simple health check route
-app.get("/health", (req, res) => {
+app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok", message: "Backend is running" });
 });
 
