@@ -21,5 +21,5 @@ app.use("/vendors", vendorRoutes);
 app.use("/rfps", rfpRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+  console.log(`Server listening on PORT : ${PORT}`);
 });
