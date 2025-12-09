@@ -1,6 +1,7 @@
 
 rfp-backend/node_modules
 rfp-backend/src/generated/prisma
+rfp-backend/dist
 
 rfp-backend/prisma/migrations
 rfp-backend/.env
